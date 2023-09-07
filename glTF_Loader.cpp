@@ -58,8 +58,8 @@ namespace gltf {
 
                 binaryFile.seekg(byteOffset);
 
-                switch (accessor.type) {
-                case SCALAR: {
+                switch (accessor.componentType) {
+                case SIGNED_SHORT: {
                     std::cout << "scalars:" << "\n";
                     std::vector<unsigned short> scalars(bufferSize / sizeof(unsigned short));
                     binaryFile.read(reinterpret_cast<char*>(scalars.data()), bufferView.byteLength);
@@ -71,26 +71,14 @@ namespace gltf {
                     std::cout << int(i) << "\n";
                     break;
                 }
-                case VEC2: {
-                    std::cout << "vec2s" << "\n";
-                    std::vector<float> vec2s(bufferSize / sizeof(float));
-                    binaryFile.read(reinterpret_cast<char*>(vec2s.data()), bufferSize);
+                case FLOAT: {
+                    std::cout << "floats" << "\n";
+                    std::vector<float> floats(bufferSize / sizeof(float));
+                    binaryFile.read(reinterpret_cast<char*>(floats.data()), bufferSize);
                     int i = 0;
-                    for (auto& obj : vec2s) {
+                    for (auto& obj : floats) {
                         i++;
                         std::cout << obj << ", ";
-                    }
-                    std::cout << int(i) << "\n";
-                    break;
-                }
-                case VEC3: {
-                    std::vector<float> vec3s(bufferSize / sizeof(float));
-                    std::cout << "vec3s:" << "\n";
-                    binaryFile.read(reinterpret_cast<char*>(vec3s.data()), bufferSize);
-                    int i = 0;
-                    for (auto& obj : vec3s) {
-                        i++;
-                            std::cout << obj << ", ";
                     }
                     std::cout << int(i) << "\n";
                     break;

@@ -42,6 +42,13 @@ namespace gltf {
         static const int VEC2{ 1 };
         static const int VEC3{ 2 };
 
+        static const int SIGNED_BYTE{ 5120 };
+        static const int UNSIGNED_BYTE{ 5121 };
+        static const int SIGNED_SHORT{ 5122 };
+        static const int UNSIGNED_SHORT{ 5123 };
+        static const int UNSIGNED_INT{ 5125 };
+        static const int FLOAT{ 5126 };
+
         Document modelInfo;
         std::unordered_map<std::string, std::unordered_map<std::string, int>> meshes;
         std::vector<Accessor> accessors;
