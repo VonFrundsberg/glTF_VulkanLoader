@@ -32,94 +32,78 @@ namespace gltf {
                 << modelInfo.GetParseError() << " \n ";
             return;
         }
-        
+
         writeMeshesMap(meshes, modelInfo);
         writeAccessorsVector(accessors, modelInfo);
         writeBufferViewsVector(bufferViews, modelInfo);
         writeBufferInfosVector(bufferInfos, modelInfo, filepath);
+        file.close();
+
+        const int bufferInfosSize = bufferInfos.size();
+        const int bufferViewsSize = bufferViews.size();
+        const int accessorsSize = accessors.size();
+
+        for (int bufferIndex = 0; bufferIndex < bufferInfosSize; bufferIndex++) {
+            const auto& bufferInfo = bufferInfos[bufferIndex];
+
+            std::ifstream binaryFile(bufferInfo.uri, std::ios::binary);
+            if (!binaryFile.is_open()) {
+                throw std::runtime_error("failed to open file!" + std::string(bufferInfo.uri));
+            }
+            for (int accessorIndex = 0; accessorIndex < accessorsSize; accessorIndex++) {
+                auto& accessor = accessors[accessorIndex];
+                auto& bufferView = bufferViews[accessor.bufferView];
+                int bufferSize = bufferView.byteLength;
+                int byteOffset = bufferView.byteOffset;
+
+                binaryFile.seekg(byteOffset);
+
+                switch (accessor.type) {
+                case SCALAR: {
+                    std::cout << "scalars:" << "\n";
+                    std::vector<unsigned short> scalars(bufferSize / sizeof(unsigned short));
+                    binaryFile.read(reinterpret_cast<char*>(scalars.data()), bufferView.byteLength);
+                    int i = 0;
+                    for (auto& obj : scalars) {
+                        i++;
+                        std::cout << obj << ", ";
+                    }
+                    std::cout << int(i) << "\n";
+                    break;
+                }
+                case VEC2: {
+                    std::cout << "vec2s" << "\n";
+                    std::vector<float> vec2s(bufferSize / sizeof(float));
+                    binaryFile.read(reinterpret_cast<char*>(vec2s.data()), bufferSize);
+                    int i = 0;
+                    for (auto& obj : vec2s) {
+                        i++;
+                        std::cout << obj << ", ";
+                    }
+                    std::cout << int(i) << "\n";
+                    break;
+                }
+                case VEC3: {
+                    std::vector<float> vec3s(bufferSize / sizeof(float));
+                    std::cout << "vec3s:" << "\n";
+                    binaryFile.read(reinterpret_cast<char*>(vec3s.data()), bufferSize);
+                    int i = 0;
+                    for (auto& obj : vec3s) {
+                        i++;
+                            std::cout << obj << ", ";
+                    }
+                    std::cout << int(i) << "\n";
+                    break;
+                }
+                }
+
+            }
+        }
+        
 
         
-            //std::cout << "buffer at " << bufferFilePath << ", with size = " << bufferSize << "\n";
-            //std::ifstream file(bufferFilePath, std::ios::binary);
-            //if (!file.is_open()) {
-            //    throw std::runtime_error("failed to open file!" + std::string(bufferFilePath));
-            //}
-            /*const int firstSize = 288;
-            std::array<float, firstSize / sizeof(float)> buffer;
-            std::cout << "positions:" << "\n";
-            file.read(reinterpret_cast<char*>(buffer.data()), firstSize);
-            int i = 0;
-            std::cout << "{";
-            for (auto& obj : buffer) {
-                i++;
-                if (!(i % 3)) {
-                    std::cout << obj << "}, {";
-                }
-                else {
-                    std::cout << obj << ", ";
-                }
 
-            }
-            std::cout << int(i) << "\n";
-
-
-            int secondSize = 288;
-            std::vector<float> buffer2(secondSize / sizeof(float));
-            std::cout << "normals:" << "\n";
-            file.read(reinterpret_cast<char*>(buffer2.data()), secondSize);
-            i = 0;
-            for (auto& obj : buffer2) {
-                i++;
-                std::cout << obj << ", ";
-            }
-            std::cout << int(i) << "\n";
-
-
-            std::cout << "UV:" << "\n";
-            int thirdSize = 192;
-            std::vector<float> buffer3(thirdSize / sizeof(float));
-
-            file.read(reinterpret_cast<char*>(buffer3.data()), thirdSize);
-            i = 0;
-            for (auto& obj : buffer3) {
-                i++;
-                std::cout << obj << ", ";
-            }
-            std::cout << int(i) << "\n";
-
-
-            std::cout << "indices:" << "\n";
-            int fourthSize = 72;
-            std::vector<unsigned short> buffer4(fourthSize / sizeof(unsigned short));
-            file.read(reinterpret_cast<char*>(buffer4.data()), fourthSize);
-            i = 0;
-            for (auto& obj : buffer4) {
-                i++;
-                std::cout << obj << ", ";
-            }
-            std::cout << int(i) << "\n";
-            file.close();*/
-        //}
-
-
-
-        //for (auto& mesh : meshesArr) {
-        //    //const auto& meshObj = mesh.GetObject();
-        //    const auto& primitives = mesh.GetObject()["primitives"].GetArray();
-        //    for (auto& primitive : primitives) {
-        //        const auto& primitiveObj = primitive.GetObject();
-        //        const auto& attributes = primitiveObj["attributes"].GetObject();
-        //        for (Value::ConstMemberIterator itr = attributes.MemberBegin();
-        //            itr != attributes.MemberEnd(); ++itr)
-        //        {
-        //            std::cout << itr->name.GetString() << ": " << itr->value.GetUint() << "\n";
-        //        }
-        //        if (primitiveObj.HasMember("indices")) {
-        //            const auto& indices = primitiveObj["indices"].GetUint();
-        //            std::cout << "indices: " << indices << "\n";
-        //        }
-        //    }
-        //}
+        
     }
 
     void GLTF_Loader::writeMeshesMap(

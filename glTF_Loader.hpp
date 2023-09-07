@@ -36,10 +36,11 @@ namespace gltf {
     public:
 
         GLTF_Loader(const std::string& filename);
+
     private:
-            const int SCALAR { 0 };
-            const int VEC2   { 1 };
-            const int VEC3   { 2 };
+        static const int SCALAR{ 0 };
+        static const int VEC2{ 1 };
+        static const int VEC3{ 2 };
 
         Document modelInfo;
         std::unordered_map<std::string, std::unordered_map<std::string, int>> meshes;
