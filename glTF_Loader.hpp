@@ -54,6 +54,7 @@ namespace gltf {
         std::vector<Accessor> accessors;
         std::vector<BufferView> bufferViews;
         std::vector<BufferInfo> bufferInfos;
+        std::vector<std::vector<char>> buffers;
 
         void writeMeshesMap(
             std::unordered_map<std::string, std::unordered_map<std::string, int>>& meshes,
@@ -67,15 +68,17 @@ namespace gltf {
         void writeBufferInfosVector(
             std::vector<BufferInfo>& bufferInfos,
             const rapidjson::Document& modelInfo, const std::string& filepath);
+        void writeCharBuffers();
+        void convertCharBuffers();
         
         int setType(const std::string& stringType) {
             switch (hash(stringType.c_str())) {
             case hash("SCALAR"):
-                return 0;
+                return SCALAR;
             case hash("VEC2"):
-                return 1;
+                return VEC2;
             case hash("VEC3"):
-                return 2;
+                return VEC3;
             }
         }
     };
