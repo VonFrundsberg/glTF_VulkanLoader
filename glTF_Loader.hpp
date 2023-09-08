@@ -41,6 +41,7 @@ namespace gltf {
         static const int SCALAR{ 0 };
         static const int VEC2{ 1 };
         static const int VEC3{ 2 };
+        static const int VEC4{ 3 };
 
         static const int SIGNED_BYTE{ 5120 };
         static const int UNSIGNED_BYTE{ 5121 };
@@ -73,12 +74,15 @@ namespace gltf {
         
         int setType(const std::string& stringType) {
             switch (hash(stringType.c_str())) {
+            
             case hash("SCALAR"):
                 return SCALAR;
             case hash("VEC2"):
                 return VEC2;
             case hash("VEC3"):
                 return VEC3;
+            case hash("VEC4"):
+                return VEC4;
             }
         }
     };

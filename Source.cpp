@@ -2,5 +2,5 @@
 #include "glTF_Loader.hpp"
 
 int main() {
-	gltf::GLTF_Loader::GLTF_Loader("glTF/cube.gltf");
+	gltf::GLTF_Loader::GLTF_Loader("glTF/flexing_cube.gltf");
 }
