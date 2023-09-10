@@ -40,8 +40,29 @@ namespace gltf {
         file.close();
 
 
-        writeCharBuffers();
-        convertCharBuffers();
+        writeBigBuffers();
+        
+        std::vector<float> positions;
+        getData(positions, "Cube", "POSITION");
+        for (auto& obj : positions) {
+            std::cout << obj << ", ";
+        }
+        std::cout << "\n";
+
+        /*for (auto& obj : pos) {
+            std::cout << obj << ", ";
+        }
+        std::cout << "\n";*/
+        //std::vector<float> normals;
+        //getData(normals, "Cube", "NORMAL");
+
+        //std::vector<float> uv;
+        //getData(uv, "Cube", "TEXCOORD_0");
+
+        
+
+        //writeBuffers();
+        //convertBuffers();
     }
 
     void GLTF_Loader::writeMeshesMap(
@@ -87,7 +108,7 @@ namespace gltf {
                 accessorInfoObj["bufferView"].GetInt(),
                 accessorInfoObj["componentType"].GetInt(),
                 accessorInfoObj["count"].GetInt(),
-                this->setType(accessorInfoObj["type"].GetString()) };
+                this->convertStringToIntType(accessorInfoObj["type"].GetString()) };
             accessors.push_back(accessor);
         }
     }
@@ -107,7 +128,6 @@ namespace gltf {
             bufferViews.push_back(bufferView);
         }
     }
-
     void GLTF_Loader::writeBufferInfosVector(
         std::vector<BufferInfo>& bufferInfos,
         const rapidjson::Document& modelInfo, const std::string & filepath)
@@ -123,7 +143,23 @@ namespace gltf {
         }
     }
 
-    void GLTF_Loader::writeCharBuffers()
+    void GLTF_Loader::writeBigBuffers() {
+        const int bufferInfosSize = bufferInfos.size();
+        bigBuffers.reserve(bufferInfosSize);
+        for (int bufferIndex = 0; bufferIndex < bufferInfosSize; bufferIndex++) {
+            const auto& bufferInfo = bufferInfos[bufferIndex];
+
+            std::ifstream binaryFile(bufferInfo.uri, std::ios::binary);
+            if (!binaryFile.is_open()) {
+                throw std::runtime_error("failed to open file!" + std::string(bufferInfo.uri));
+            }
+            std::vector<char> bigBuffer(bufferInfo.byteLength);
+            binaryFile.read(bigBuffer.data(), bufferInfo.byteLength);
+            bigBuffers.push_back(bigBuffer);
+            binaryFile.close();
+        }
+    }
+    void GLTF_Loader::writeBuffers()
     {
         const int bufferInfosSize = bufferInfos.size();
         const int bufferViewsSize = bufferViews.size();
@@ -138,7 +174,7 @@ namespace gltf {
             }
             std::vector<char> bigBuffer(bufferInfo.byteLength);
             binaryFile.read(bigBuffer.data(), bufferInfo.byteLength);
-
+            binaryFile.close();
             for (int accessorIndex = 0; accessorIndex < accessorsSize; accessorIndex++) {
                 const auto& accessor = accessors[accessorIndex];
                 const auto& bufferView = bufferViews[accessor.bufferView];
@@ -152,7 +188,82 @@ namespace gltf {
         }
     }
 
-    void GLTF_Loader::convertCharBuffers() {
+    template <typename VectorType>
+    void GLTF_Loader::getData(std::vector<VectorType> & dstVector,
+        const std::string& objectName,
+        const std::string& attributeName)
+    {
+        const int accessorIndex = this->meshes[objectName][attributeName];
+        const auto& accessor = accessors[accessorIndex];
+        const auto& bufferView = bufferViews[accessor.bufferView];
+        const int bufferSize = bufferView.byteLength;
+        const int byteOffset = bufferView.byteOffset;
+
+        dstVector.resize(bufferSize / sizeof(VectorType));
+        std::memcpy(dstVector.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+    }
+
+
+   std::variant<
+        std::vector<unsigned short>,
+        std::vector<signed char>,
+        std::vector<unsigned char>,
+        std::vector<short>,
+        std::vector<unsigned int>,
+        std::vector<float>> GLTF_Loader::getDataAuto(
+        const std::string& objectName,
+        const std::string& attributeName)
+    {
+        const int accessorIndex = this->meshes[objectName][attributeName];
+        const auto& accessor = accessors[accessorIndex];
+        const auto& bufferView = bufferViews[accessor.bufferView];
+        const int bufferSize = bufferView.byteLength;
+        const int byteOffset = bufferView.byteOffset;
+        
+        std::vector<float> scalars(bufferSize / sizeof(float));
+        return scalars;
+        /*switch (accessor.componentType) {
+        case UNSIGNED_SHORT: {
+            std::cout << "scalars:" << "\n";
+            std::vector<unsigned short> scalars(bufferSize / sizeof(unsigned short));
+            std::memcpy(scalars.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+            return scalars;
+        }
+        case SIGNED_BYTE: {
+            std::cout << "chars:" << "\n";
+            std::vector<signed char> chars(bufferSize);
+            std::memcpy(chars.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+            return chars;
+        }
+        case UNSIGNED_BYTE: {
+            std::cout << "unsigned chars:" << "\n";
+            std::vector<unsigned char> chars(bufferSize / sizeof(unsigned char));
+            std::memcpy(chars.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+            return chars;
+        }
+        case SIGNED_SHORT: {
+            std::cout << "signed shorts:" << "\n";
+            std::vector<short> shorts(bufferSize / sizeof(short));
+            std::memcpy(shorts.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+            return shorts;
+        }
+        case UNSIGNED_INT: {
+            std::cout << "unsigned ints" << "\n";
+            std::vector<unsigned int> uints(bufferSize / sizeof(unsigned int));
+            std::memcpy(uints.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+            return uints;
+        }
+        case FLOAT: {
+            std::cout << "floats" << "\n";
+            std::vector<float> floats(bufferSize / sizeof(float));
+            std::memcpy(floats.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+            return floats;
+            }
+        }*/
+    }
+
+
+    void GLTF_Loader::convertBuffers() {
 
         const int bufferInfosSize = bufferInfos.size();
         const int bufferViewsSize = bufferViews.size();
@@ -179,7 +290,7 @@ namespace gltf {
                 }
                 case SIGNED_BYTE: {
                     std::cout << "chars:" << "\n";
-                    std::vector<char> chars(bufferSize);
+                    std::vector<signed char> chars(bufferSize);
                     std::memcpy(chars.data(), buffers[accessorIndex].data(), bufferSize);
                     int i = 0;
                     for (auto& obj : chars) {
