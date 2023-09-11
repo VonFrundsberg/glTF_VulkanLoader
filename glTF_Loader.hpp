@@ -6,7 +6,11 @@
 #include <variant>
 
 using namespace rapidjson;
+<<<<<<< HEAD
 
+=======
+namespace gltf {
+>>>>>>> 5d3a6267e0304d953a5a21962b750a9eb7c8d37d
     constexpr unsigned int hash(const char* s, int off = 0) {
         return !s[off] ? 5381 : (hash(s, off + 1) * 33) ^ s[off];
     }
@@ -85,6 +89,7 @@ using namespace rapidjson;
         void writeBuffers();
         void writeBigBuffers();
 
+<<<<<<< HEAD
         
 
 
@@ -99,6 +104,23 @@ using namespace rapidjson;
 
         void convertBuffers();
         
+=======
+        template <typename VectorType>
+        void getData(std::vector<VectorType>& dstVector, const std::string& objectName, const std::string& attributeName);
+
+
+        std::variant<
+            std::vector<unsigned short>,
+            std::vector<signed char>,
+            std::vector<unsigned char>,
+            std::vector<short>,
+            std::vector<unsigned int>,
+            std::vector<float>>   getDataAuto(const std::string& objectName, const std::string& attributeName);
+
+
+        void convertBuffers();
+        
+>>>>>>> 5d3a6267e0304d953a5a21962b750a9eb7c8d37d
         int convertStringToIntType(const std::string& stringType) {
             switch (hash(stringType.c_str())) {
             case hash("SCALAR"):
