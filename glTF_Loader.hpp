@@ -1,11 +1,12 @@
+#pragma once
 #include "rapidjson/document.h"
 #include <iostream>
 #include <fstream>
 #include <unordered_map>
+#include <variant>
 
 using namespace rapidjson;
 
-namespace gltf {
     constexpr unsigned int hash(const char* s, int off = 0) {
         return !s[off] ? 5381 : (hash(s, off + 1) * 33) ^ s[off];
     }
@@ -36,7 +37,18 @@ namespace gltf {
     public:
 
         GLTF_Loader(const std::string& filename);
+        template <typename VectorType>
+        void getData(std::vector<VectorType>& dstVector, const std::string& objectName, const std::string& attributeName) {
+            const int accessorIndex = this->meshes[objectName][attributeName];
+            const auto& accessor = accessors[accessorIndex];
+            const auto& bufferView = bufferViews[accessor.bufferView];
+            const int bufferSize = bufferView.byteLength;
+            const int byteOffset = bufferView.byteOffset;
 
+            dstVector.resize(bufferSize / sizeof(VectorType));
+            std::memcpy(dstVector.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+        }
+        std::unordered_map<std::string, std::unordered_map<std::string, int>> meshes;
     private:
         static const int SCALAR{ 0 };
         static const int VEC2{ 1 };
@@ -51,11 +63,11 @@ namespace gltf {
         static const int FLOAT{ 5126 };
 
         Document modelInfo;
-        std::unordered_map<std::string, std::unordered_map<std::string, int>> meshes;
         std::vector<Accessor> accessors;
         std::vector<BufferView> bufferViews;
         std::vector<BufferInfo> bufferInfos;
         std::vector<std::vector<char>> buffers;
+        std::vector<std::vector<char>> bigBuffers;
 
         void writeMeshesMap(
             std::unordered_map<std::string, std::unordered_map<std::string, int>>& meshes,
@@ -69,12 +81,26 @@ namespace gltf {
         void writeBufferInfosVector(
             std::vector<BufferInfo>& bufferInfos,
             const rapidjson::Document& modelInfo, const std::string& filepath);
-        void writeCharBuffers();
-        void convertCharBuffers();
+
+        void writeBuffers();
+        void writeBigBuffers();
+
         
-        int setType(const std::string& stringType) {
+
+
+        std::variant<
+            std::vector<unsigned short>,
+            std::vector<signed char>,
+            std::vector<unsigned char>,
+            std::vector<short>,
+            std::vector<unsigned int>,
+            std::vector<float>>   getDataAuto(const std::string& objectName, const std::string& attributeName);
+
+
+        void convertBuffers();
+        
+        int convertStringToIntType(const std::string& stringType) {
             switch (hash(stringType.c_str())) {
-            
             case hash("SCALAR"):
                 return SCALAR;
             case hash("VEC2"):
@@ -86,4 +112,3 @@ namespace gltf {
             }
         }
     };
-}

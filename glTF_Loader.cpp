@@ -11,9 +11,6 @@ std::string splitFilename(const std::string& str)
     return result;
     //std::cout << " file: " << str.substr(found + 1) << "\n";
 }
-namespace gltf {
-
-    
     GLTF_Loader::GLTF_Loader(const std::string& filepath)
     {
         // Open the file
@@ -39,9 +36,7 @@ namespace gltf {
         writeBufferInfosVector(bufferInfos, modelInfo, filepath);
         file.close();
 
-
-        writeCharBuffers();
-        convertCharBuffers();
+        writeBigBuffers();
     }
 
     void GLTF_Loader::writeMeshesMap(
@@ -87,7 +82,7 @@ namespace gltf {
                 accessorInfoObj["bufferView"].GetInt(),
                 accessorInfoObj["componentType"].GetInt(),
                 accessorInfoObj["count"].GetInt(),
-                this->setType(accessorInfoObj["type"].GetString()) };
+                this->convertStringToIntType(accessorInfoObj["type"].GetString()) };
             accessors.push_back(accessor);
         }
     }
@@ -107,7 +102,6 @@ namespace gltf {
             bufferViews.push_back(bufferView);
         }
     }
-
     void GLTF_Loader::writeBufferInfosVector(
         std::vector<BufferInfo>& bufferInfos,
         const rapidjson::Document& modelInfo, const std::string & filepath)
@@ -123,7 +117,23 @@ namespace gltf {
         }
     }
 
-    void GLTF_Loader::writeCharBuffers()
+    void GLTF_Loader::writeBigBuffers() {
+        const int bufferInfosSize = bufferInfos.size();
+        bigBuffers.reserve(bufferInfosSize);
+        for (int bufferIndex = 0; bufferIndex < bufferInfosSize; bufferIndex++) {
+            const auto& bufferInfo = bufferInfos[bufferIndex];
+
+            std::ifstream binaryFile(bufferInfo.uri, std::ios::binary);
+            if (!binaryFile.is_open()) {
+                throw std::runtime_error("failed to open file!" + std::string(bufferInfo.uri));
+            }
+            std::vector<char> bigBuffer(bufferInfo.byteLength);
+            binaryFile.read(bigBuffer.data(), bufferInfo.byteLength);
+            bigBuffers.push_back(bigBuffer);
+            binaryFile.close();
+        }
+    }
+    void GLTF_Loader::writeBuffers()
     {
         const int bufferInfosSize = bufferInfos.size();
         const int bufferViewsSize = bufferViews.size();
@@ -138,7 +148,7 @@ namespace gltf {
             }
             std::vector<char> bigBuffer(bufferInfo.byteLength);
             binaryFile.read(bigBuffer.data(), bufferInfo.byteLength);
-
+            binaryFile.close();
             for (int accessorIndex = 0; accessorIndex < accessorsSize; accessorIndex++) {
                 const auto& accessor = accessors[accessorIndex];
                 const auto& bufferView = bufferViews[accessor.bufferView];
@@ -152,92 +162,149 @@ namespace gltf {
         }
     }
 
-    void GLTF_Loader::convertCharBuffers() {
+   std::variant<
+        std::vector<unsigned short>,
+        std::vector<signed char>,
+        std::vector<unsigned char>,
+        std::vector<short>,
+        std::vector<unsigned int>,
+        std::vector<float>> 
+       GLTF_Loader::getDataAuto(
+        const std::string& objectName,
+        const std::string& attributeName)
+    {
+        const int accessorIndex = this->meshes[objectName][attributeName];
+        const auto& accessor = accessors[accessorIndex];
+        const auto& bufferView = bufferViews[accessor.bufferView];
+        const int bufferSize = bufferView.byteLength;
+        const int byteOffset = bufferView.byteOffset;
 
-        const int bufferInfosSize = bufferInfos.size();
-        const int bufferViewsSize = bufferViews.size();
-        const int accessorsSize = accessors.size();
-
-        for (int accessorIndex = 0; accessorIndex < accessorsSize; accessorIndex++) {
-            const auto& accessor = accessors[accessorIndex];
-            const auto& bufferView = bufferViews[accessor.bufferView];
-            int bufferSize = bufferView.byteLength;
-            int byteOffset = bufferView.byteOffset;
-
-            switch (accessor.componentType) {
-                case UNSIGNED_SHORT: {
-                    std::cout << "scalars:" << "\n";
-                    std::vector<unsigned short> scalars(bufferSize / sizeof(unsigned short));
-                    std::memcpy(scalars.data(), buffers[accessorIndex].data(), bufferSize);
-                    int i = 0;
-                    for (auto& obj : scalars) {
-                        i++;
-                        std::cout << obj << ", ";
-                    }
-                    std::cout << int(i) << "\n";
-                    break;
-                }
-                case SIGNED_BYTE: {
-                    std::cout << "chars:" << "\n";
-                    std::vector<char> chars(bufferSize);
-                    std::memcpy(chars.data(), buffers[accessorIndex].data(), bufferSize);
-                    int i = 0;
-                    for (auto& obj : chars) {
-                        i++;
-                        std::cout << obj << ", ";
-                    }
-                    std::cout << int(i) << "\n";
-                    break;
-                }
-                case UNSIGNED_BYTE: {
-                    std::cout << "unsigned chars:" << "\n";
-                    std::vector<unsigned char> chars(bufferSize / sizeof(unsigned char));
-                    std::memcpy(chars.data(), buffers[accessorIndex].data(), bufferSize);
-                    int i = 0;
-                    for (auto& obj : chars) {
-                        i++;
-                        std::cout << static_cast<unsigned>( obj )<< ", ";
-                    }
-                    std::cout << int(i) << "\n";
-                    break;
-                }
-                case SIGNED_SHORT: {
-                    std::cout << "signed shorts:" << "\n";
-                    std::vector<short> shorts(bufferSize / sizeof(short));
-                    std::memcpy(shorts.data(), buffers[accessorIndex].data(), bufferSize);
-                    int i = 0;
-                    for (auto& obj : shorts) {
-                        i++;
-                        std::cout << obj << ", ";
-                    }
-                    std::cout << int(i) << "\n";
-                    break;
-                }
-                case UNSIGNED_INT: {
-                    std::cout << "unsigned ints" << "\n";
-                    std::vector<unsigned int> uints(bufferSize / sizeof(unsigned int));
-                    std::memcpy(uints.data(), buffers[accessorIndex].data(), bufferSize);
-                    int i = 0;
-                    for (auto& obj : uints) {
-                        i++;
-                        std::cout << obj << ", ";
-                    }
-                    std::cout << int(i) << "\n";
-                    break;
-                }
-                case FLOAT: {
-                    std::cout << "floats" << "\n";
-                    std::vector<float> floats(bufferSize / sizeof(float));
-                    std::memcpy(floats.data(), buffers[accessorIndex].data(), bufferSize);
-                    int i = 0;
-                    for (auto& obj : floats) {
-                        i++;
-                        std::cout << obj << ", ";
-                    }
-                    std::cout << int(i) << "\n";
-                    break;
-                }
+        switch (accessor.componentType) {
+        case UNSIGNED_SHORT: {
+            std::cout << "scalars:" << "\n";
+            std::vector<unsigned short> scalars(bufferSize / sizeof(unsigned short));
+            std::memcpy(scalars.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+            return scalars;
         }
-       }
+        case SIGNED_BYTE: {
+            std::cout << "chars:" << "\n";
+            std::vector<signed char> chars(bufferSize);
+            std::memcpy(chars.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+            return chars;
+        }
+        case UNSIGNED_BYTE: {
+            std::cout << "unsigned chars:" << "\n";
+            std::vector<unsigned char> chars(bufferSize / sizeof(unsigned char));
+            std::memcpy(chars.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+            return chars;
+        }
+        case SIGNED_SHORT: {
+            std::cout << "signed shorts:" << "\n";
+            std::vector<short> shorts(bufferSize / sizeof(short));
+            std::memcpy(shorts.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+            return shorts;
+        }
+        case UNSIGNED_INT: {
+            std::cout << "unsigned ints" << "\n";
+            std::vector<unsigned int> uints(bufferSize / sizeof(unsigned int));
+            std::memcpy(uints.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+            return uints;
+        }
+        case FLOAT: {
+            std::cout << "floats" << "\n";
+            std::vector<float> floats(bufferSize / sizeof(float));
+            std::memcpy(floats.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+            return floats;
+            }
+        }
     }
-}
+
+
+   void GLTF_Loader::convertBuffers() {
+
+       const int bufferInfosSize = bufferInfos.size();
+       const int bufferViewsSize = bufferViews.size();
+       const int accessorsSize = accessors.size();
+
+       for (int accessorIndex = 0; accessorIndex < accessorsSize; accessorIndex++) {
+           const auto& accessor = accessors[accessorIndex];
+           const auto& bufferView = bufferViews[accessor.bufferView];
+           int bufferSize = bufferView.byteLength;
+           int byteOffset = bufferView.byteOffset;
+
+           switch (accessor.componentType) {
+           case UNSIGNED_SHORT: {
+               std::cout << "scalars:" << "\n";
+               std::vector<unsigned short> scalars(bufferSize / sizeof(unsigned short));
+               std::memcpy(scalars.data(), buffers[accessorIndex].data(), bufferSize);
+               int i = 0;
+               for (auto& obj : scalars) {
+                   i++;
+                   std::cout << obj << ", ";
+               }
+               std::cout << int(i) << "\n";
+               break;
+           }
+           case SIGNED_BYTE: {
+               std::cout << "chars:" << "\n";
+               std::vector<signed char> chars(bufferSize);
+               std::memcpy(chars.data(), buffers[accessorIndex].data(), bufferSize);
+               int i = 0;
+               for (auto& obj : chars) {
+                   i++;
+                   std::cout << obj << ", ";
+               }
+               std::cout << int(i) << "\n";
+               break;
+           }
+           case UNSIGNED_BYTE: {
+               std::cout << "unsigned chars:" << "\n";
+               std::vector<unsigned char> chars(bufferSize / sizeof(unsigned char));
+               std::memcpy(chars.data(), buffers[accessorIndex].data(), bufferSize);
+               int i = 0;
+               for (auto& obj : chars) {
+                   i++;
+                   std::cout << static_cast<unsigned>(obj) << ", ";
+               }
+               std::cout << int(i) << "\n";
+               break;
+           }
+           case SIGNED_SHORT: {
+               std::cout << "signed shorts:" << "\n";
+               std::vector<short> shorts(bufferSize / sizeof(short));
+               std::memcpy(shorts.data(), buffers[accessorIndex].data(), bufferSize);
+               int i = 0;
+               for (auto& obj : shorts) {
+                   i++;
+                   std::cout << obj << ", ";
+               }
+               std::cout << int(i) << "\n";
+               break;
+           }
+           case UNSIGNED_INT: {
+               std::cout << "unsigned ints" << "\n";
+               std::vector<unsigned int> uints(bufferSize / sizeof(unsigned int));
+               std::memcpy(uints.data(), buffers[accessorIndex].data(), bufferSize);
+               int i = 0;
+               for (auto& obj : uints) {
+                   i++;
+                   std::cout << obj << ", ";
+               }
+               std::cout << int(i) << "\n";
+               break;
+           }
+           case FLOAT: {
+               std::cout << "floats" << "\n";
+               std::vector<float> floats(bufferSize / sizeof(float));
+               std::memcpy(floats.data(), buffers[accessorIndex].data(), bufferSize);
+               int i = 0;
+               for (auto& obj : floats) {
+                   i++;
+                   std::cout << obj << ", ";
+               }
+               std::cout << int(i) << "\n";
+               break;
+           }
+           }
+       }
+   }
