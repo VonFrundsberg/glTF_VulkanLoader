@@ -119,10 +119,15 @@ using namespace rapidjson;
         void readAnimationSamplers(std::vector<AnimationSampler>& animationSamplers, 
             const rapidjson::Value& samplersArr);
 
+        void readAnimationChannels(std::vector<AnimationChannel>& animationChannels,
+            const rapidjson::Value& cnannelsObj);
+
+
         void readNodes( std::unordered_map<std::string, NodeAttributes>& nodes);
-      
 
         void readMeshes(std::unordered_map<std::string, MeshAttributes>& meshes);
+
+
         void readAccessors(std::vector<Accessor>& accessors);
         void readBufferViews(std::vector<BufferView>& bufferViews);
         void readBufferInfos(std::vector<BufferInfo>& bufferInfos, const std::string& filepath);

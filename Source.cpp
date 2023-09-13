@@ -63,5 +63,16 @@ int main() {
 		i++;
 	}
 	std::cout << "\n";
+
+	for (const auto& animation : gltf.animations) {
+		std::cout << "animation name: " << animation.first << "\n";
+		for (const auto& sampler : animation.second.samplers) {
+			std::cout << "input: " << sampler.input << "\n";
+		}
+		std::cout << "\n";
+		for (const auto& channel : animation.second.channels) {
+			std::cout << "output " << channel.targetPath << "\n";
+		}
+	}
 	
 }

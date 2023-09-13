@@ -159,18 +159,35 @@ void GLTF_Loader::readAnimationSamplers(std::vector<AnimationSampler>& animation
 
 }
 
+
+void GLTF_Loader::readAnimationChannels(std::vector<AnimationChannel>& animationChannels,
+	const rapidjson::Value& cnannelsObj) {
+	const auto& channelsArr = cnannelsObj.GetArray();
+	for (const auto& channel : channelsArr) {
+		const auto& channelObj = channel.GetObject();
+		const auto& targetAttributes = channelObj["target"].GetObject();
+		AnimationChannel animChannel{ channelObj["sampler"].GetInt(),
+			targetAttributes["node"].GetInt(),
+			targetAttributes["path"].GetString() };
+		animationChannels.push_back(animChannel);
+	}
+
+}
+
 void GLTF_Loader::readAnimations()
 {
 	const auto& animationsArr = modelInfo["animations"].GetArray();
 
 	for (const auto& animation : animationsArr) {
 		const auto& animationObject = animation.GetObject();
-		const auto& meshName = animationObject["name"].GetString();
+		const auto& animationName = animationObject["name"].GetString();
 
 		std::vector<AnimationSampler> animationSamplers;
-		readAnimationSamplers(animationSamplers, (animationObject["samplers"]));
-		animationObject["channels"];
+		std::vector<AnimationChannel> animationChannels;
+		readAnimationSamplers(animationSamplers, animationObject["samplers"]);
+		readAnimationChannels(animationChannels, animationObject["channels"]);
 
+		animations.emplace(animationName, Animation{ animationSamplers, animationChannels });
 	}
 
 }
