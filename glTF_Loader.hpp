@@ -33,13 +33,50 @@ using namespace rapidjson;
         std::string uri;
     };
 
+    struct MeshAttributes {
+        std::unordered_map<std::string, int> attributes;
+        MeshAttributes() {};
+        MeshAttributes(const std::unordered_map<std::string, int>& argAttributes) :
+            attributes(argAttributes){};
+    };
+
+    struct NodeAttributes {
+        std::unordered_map<std::string, int> attributes;
+        NodeAttributes() {};
+        NodeAttributes(const std::unordered_map<std::string, int>& argAttributes) :
+            attributes(argAttributes) {};
+    };
+
+    struct AnimationSampler {
+        int input;
+        int output;
+        std::string interpolation;
+    };
+
+    struct AnimationChannel {
+        int samplerId;
+        int targetNodeId;
+        std::string targetPath;
+    };
+
+    struct Animation {
+        std::vector<AnimationSampler> samplers;
+        std::vector<AnimationChannel> channels;
+    };
+
+    struct Node {
+        std::string name;
+    };
+
     class GLTF_Loader {
     public:
 
         GLTF_Loader(const std::string& filename);
+
         template <typename VectorType>
-        void getData(std::vector<VectorType>& dstVector, const std::string& objectName, const std::string& attributeName) {
-            const int accessorIndex = this->meshes[objectName][attributeName];
+        void getMeshData(
+            std::vector<VectorType>& dstVector, const std::string & objectName, const std::string& attributeName) {
+            const int accessorIndex  = meshes[objectName].attributes[attributeName];
             const auto& accessor = accessors[accessorIndex];
             const auto& bufferView = bufferViews[accessor.bufferView];
             const int bufferSize = bufferView.byteLength;
@@ -48,7 +85,10 @@ using namespace rapidjson;
             dstVector.resize(bufferSize / sizeof(VectorType));
             std::memcpy(dstVector.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
         }
-        std::unordered_map<std::string, std::unordered_map<std::string, int>> meshes;
+
+        std::unordered_map<std::string, MeshAttributes> meshes;
+        std::unordered_map<std::string, NodeAttributes> nodes;
+        std::unordered_map<std::string, Animation> animations;
     private:
         static const int SCALAR{ 0 };
         static const int VEC2{ 1 };
@@ -63,36 +103,42 @@ using namespace rapidjson;
         static const int FLOAT{ 5126 };
 
         Document modelInfo;
+
+
         std::vector<Accessor> accessors;
         std::vector<BufferView> bufferViews;
         std::vector<BufferInfo> bufferInfos;
+        std::vector<AnimationSampler> animationSamplers;
+
+
         std::vector<std::vector<char>> buffers;
         std::vector<std::vector<char>> bigBuffers;
 
-        void writeMeshesMap(
-            std::unordered_map<std::string, std::unordered_map<std::string, int>>& meshes,
-            const rapidjson::Document& modelInfo);
-        void writeAccessorsVector(
-            std::vector<Accessor>& accessors,
-            const rapidjson::Document& modelInfo);
-        void writeBufferViewsVector(
-            std::vector<BufferView>& bufferViews,
-            const rapidjson::Document& modelInfo);
-        void writeBufferInfosVector(
-            std::vector<BufferInfo>& bufferInfos,
-            const rapidjson::Document& modelInfo, const std::string& filepath);
+
+        void readAnimations();
+        void readAnimationSamplers(std::vector<AnimationSampler>& animationSamplers, 
+            const rapidjson::Value& samplersArr);
+
+        void readNodes( std::unordered_map<std::string, NodeAttributes>& nodes);
+      
+
+        void readMeshes(std::unordered_map<std::string, MeshAttributes>& meshes);
+        void readAccessors(std::vector<Accessor>& accessors);
+        void readBufferViews(std::vector<BufferView>& bufferViews);
+        void readBufferInfos(std::vector<BufferInfo>& bufferInfos, const std::string& filepath);
+
 
         void writeBuffers();
         void writeBigBuffers();
 
 
-        std::variant<
+        /*std::variant<
             std::vector<unsigned short>,
             std::vector<signed char>,
             std::vector<unsigned char>,
             std::vector<short>,
             std::vector<unsigned int>,
-            std::vector<float>>   getDataAuto(const std::string& objectName, const std::string& attributeName);
+            std::vector<float>>   getDataAuto(const int objectId, const std::string& attributeName);*/
 
 
         void convertBuffers();

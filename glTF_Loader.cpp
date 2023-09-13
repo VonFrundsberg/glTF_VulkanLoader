@@ -30,22 +30,37 @@ GLTF_Loader::GLTF_Loader(const std::string& filepath)
 		return;
 	}
 
-	writeMeshesMap(meshes, modelInfo);
-	writeAccessorsVector(accessors, modelInfo);
-	writeBufferViewsVector(bufferViews, modelInfo);
-	writeBufferInfosVector(bufferInfos, modelInfo, filepath);
+	readNodes(nodes);
+	readMeshes(meshes);
+
+
+	if (modelInfo.HasMember("animations")) {
+		readAnimations();
+	}
+	readAccessors(accessors);
+
+	readBufferViews(bufferViews);
+	readBufferInfos(bufferInfos, filepath);
 	file.close();
 
 	writeBigBuffers();
 }
 
-void GLTF_Loader::writeMeshesMap(
-	std::unordered_map<std::string, std::unordered_map<std::string, int>>& meshes,
-	const rapidjson::Document& modelInfo) {
+void GLTF_Loader::readNodes(std::unordered_map<std::string, NodeAttributes>& nodes) {
+
+	const auto& nodesArr = modelInfo["nodes"].GetArray();
+	for (const auto& node : nodesArr) {
+		const auto& nodeName = node.GetObject()["name"].GetString();
+		NodeAttributes nodeAttributes{};
+		nodes.emplace(nodeName, nodeAttributes);
+	}
+}
+
+void GLTF_Loader::readMeshes(std::unordered_map<std::string, MeshAttributes>& meshes) {
 
 	const auto& meshesArr = modelInfo["meshes"].GetArray();
 
-	for (auto& mesh : meshesArr) {
+	for (const auto& mesh : meshesArr) {
 		const auto& meshName = mesh.GetObject()["name"].GetString();
 		const auto& primitivesArr = mesh.GetObject()["primitives"].GetArray();
 
@@ -70,10 +85,10 @@ void GLTF_Loader::writeMeshesMap(
 				primitives.emplace("indices", primitiveObj["indices"].GetInt());
 			}
 		}
-		meshes.emplace(meshName, primitives);
+		meshes.emplace(meshName, MeshAttributes(primitives));
 	}
 }
-void GLTF_Loader::writeAccessorsVector(std::vector<Accessor>& accessors, const rapidjson::Document& modelInfo)
+void GLTF_Loader::readAccessors(std::vector<Accessor>& accessors)
 {
 	const auto& accessorsArr = modelInfo["accessors"].GetArray();
 	for (auto& accessorInfo : accessorsArr) {
@@ -86,7 +101,7 @@ void GLTF_Loader::writeAccessorsVector(std::vector<Accessor>& accessors, const r
 		accessors.push_back(accessor);
 	}
 }
-void GLTF_Loader::writeBufferViewsVector(std::vector<BufferView>& bufferViews, const rapidjson::Document& modelInfo)
+void GLTF_Loader::readBufferViews(std::vector<BufferView>& bufferViews)
 {
 	const auto& buffeViewsArr = modelInfo["bufferViews"].GetArray();
 	for (auto& bufferView : buffeViewsArr) {
@@ -102,9 +117,7 @@ void GLTF_Loader::writeBufferViewsVector(std::vector<BufferView>& bufferViews, c
 		bufferViews.push_back(bufferView);
 	}
 }
-void GLTF_Loader::writeBufferInfosVector(
-	std::vector<BufferInfo>& bufferInfos,
-	const rapidjson::Document& modelInfo, const std::string& filepath)
+void GLTF_Loader::readBufferInfos(std::vector<BufferInfo>& bufferInfos, const std::string& filepath)
 {
 	const auto& buffersArr = modelInfo["buffers"].GetArray();
 	std::string pathToBin(splitFilename(filepath) + "\\");
@@ -133,6 +146,35 @@ void GLTF_Loader::writeBigBuffers() {
 		binaryFile.close();
 	}
 }
+void GLTF_Loader::readAnimationSamplers(std::vector<AnimationSampler>& animationSamplers,
+	const rapidjson::Value& samplersObj) {
+	const auto& samplersArr = samplersObj.GetArray();
+	for (const auto& sampler : samplersArr) {
+		const auto & samplerObj = sampler.GetObject();
+		AnimationSampler animSampler{ samplerObj["input"].GetInt(),
+			samplerObj["output"].GetInt(),
+			samplerObj["interpolation"].GetString() };
+		animationSamplers.push_back(animSampler);
+	}
+
+}
+
+void GLTF_Loader::readAnimations()
+{
+	const auto& animationsArr = modelInfo["animations"].GetArray();
+
+	for (const auto& animation : animationsArr) {
+		const auto& animationObject = animation.GetObject();
+		const auto& meshName = animationObject["name"].GetString();
+
+		std::vector<AnimationSampler> animationSamplers;
+		readAnimationSamplers(animationSamplers, (animationObject["samplers"]));
+		animationObject["channels"];
+
+	}
+
+}
+
 void GLTF_Loader::writeBuffers()
 {
 	const int bufferInfosSize = bufferInfos.size();
@@ -162,60 +204,60 @@ void GLTF_Loader::writeBuffers()
 	}
 }
 
-std::variant<
-	std::vector<unsigned short>,
-	std::vector<signed char>,
-	std::vector<unsigned char>,
-	std::vector<short>,
-	std::vector<unsigned int>,
-	std::vector<float>> GLTF_Loader::getDataAuto(
-		const std::string& objectName,
-		const std::string& attributeName)
-{
-	const int accessorIndex = this->meshes[objectName][attributeName];
-	const auto& accessor = accessors[accessorIndex];
-	const auto& bufferView = bufferViews[accessor.bufferView];
-	const int bufferSize = bufferView.byteLength;
-	const int byteOffset = bufferView.byteOffset;
-	switch (accessor.componentType) {
-	case UNSIGNED_SHORT: {
-		std::cout << "scalars:" << "\n";
-		std::vector<unsigned short> scalars(bufferSize / sizeof(unsigned short));
-		std::memcpy(scalars.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
-		return scalars;
-	}
-	case SIGNED_BYTE: {
-		std::cout << "chars:" << "\n";
-		std::vector<signed char> chars(bufferSize);
-		std::memcpy(chars.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
-		return chars;
-	}
-	case UNSIGNED_BYTE: {
-		std::cout << "unsigned chars:" << "\n";
-		std::vector<unsigned char> chars(bufferSize / sizeof(unsigned char));
-		std::memcpy(chars.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
-		return chars;
-	}
-	case SIGNED_SHORT: {
-		std::cout << "signed shorts:" << "\n";
-		std::vector<short> shorts(bufferSize / sizeof(short));
-		std::memcpy(shorts.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
-		return shorts;
-	}
-	case UNSIGNED_INT: {
-		std::cout << "unsigned ints" << "\n";
-		std::vector<unsigned int> uints(bufferSize / sizeof(unsigned int));
-		std::memcpy(uints.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
-		return uints;
-	}
-	case FLOAT: {
-		std::cout << "floats" << "\n";
-		std::vector<float> floats(bufferSize / sizeof(float));
-		std::memcpy(floats.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
-		return floats;
-	}
-	}
-}
+//std::variant<
+//	std::vector<unsigned short>,
+//	std::vector<signed char>,
+//	std::vector<unsigned char>,
+//	std::vector<short>,
+//	std::vector<unsigned int>,
+//	std::vector<float>> GLTF_Loader::getDataAuto(
+//		const int objectId,
+//		const std::string& attributeName)
+//{
+//	const int accessorIndex = meshes[objectId].attributes[attributeName];
+//	const auto& accessor = accessors[accessorIndex];
+//	const auto& bufferView = bufferViews[accessor.bufferView];
+//	const int bufferSize = bufferView.byteLength;
+//	const int byteOffset = bufferView.byteOffset;
+//	switch (accessor.componentType) {
+//	case UNSIGNED_SHORT: {
+//		std::cout << "scalars:" << "\n";
+//		std::vector<unsigned short> scalars(bufferSize / sizeof(unsigned short));
+//		std::memcpy(scalars.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+//		return scalars;
+//	}
+//	case SIGNED_BYTE: {
+//		std::cout << "chars:" << "\n";
+//		std::vector<signed char> chars(bufferSize);
+//		std::memcpy(chars.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+//		return chars;
+//	}
+//	case UNSIGNED_BYTE: {
+//		std::cout << "unsigned chars:" << "\n";
+//		std::vector<unsigned char> chars(bufferSize / sizeof(unsigned char));
+//		std::memcpy(chars.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+//		return chars;
+//	}
+//	case SIGNED_SHORT: {
+//		std::cout << "signed shorts:" << "\n";
+//		std::vector<short> shorts(bufferSize / sizeof(short));
+//		std::memcpy(shorts.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+//		return shorts;
+//	}
+//	case UNSIGNED_INT: {
+//		std::cout << "unsigned ints" << "\n";
+//		std::vector<unsigned int> uints(bufferSize / sizeof(unsigned int));
+//		std::memcpy(uints.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+//		return uints;
+//	}
+//	case FLOAT: {
+//		std::cout << "floats" << "\n";
+//		std::vector<float> floats(bufferSize / sizeof(float));
+//		std::memcpy(floats.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+//		return floats;
+//	}
+//	}
+//}
 
 
 void GLTF_Loader::convertBuffers() {
