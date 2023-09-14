@@ -86,6 +86,35 @@ using namespace rapidjson;
             std::memcpy(dstVector.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
         }
 
+        template <typename VectorType>
+        void getNodeData(
+            std::vector<VectorType>& dstVector, const std::string& objectName, const std::string& attributeName) {
+            const int accessorIndex = nodes[objectName].attributes[attributeName];
+            const auto& accessor = accessors[accessorIndex];
+            const auto& bufferView = bufferViews[accessor.bufferView];
+            const int bufferSize = bufferView.byteLength;
+            const int byteOffset = bufferView.byteOffset;
+
+            dstVector.resize(bufferSize / sizeof(VectorType));
+            std::memcpy(dstVector.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+        }
+
+        template <typename VectorType>
+        void getAnimationData(
+            std::vector<VectorType>& dstVector,
+            const std::string& objectName, const int samplerId,
+            const std::string& attributeName) {
+
+            const int accessorIndex = animations[objectName].samplers[samplerId].output;
+            const auto& accessor = accessors[accessorIndex];
+            const auto& bufferView = bufferViews[accessor.bufferView];
+            const int bufferSize = bufferView.byteLength;
+            const int byteOffset = bufferView.byteOffset;
+
+            dstVector.resize(bufferSize / sizeof(VectorType));
+            std::memcpy(dstVector.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+        }
+
         std::unordered_map<std::string, MeshAttributes> meshes;
         std::unordered_map<std::string, NodeAttributes> nodes;
         std::unordered_map<std::string, Animation> animations;

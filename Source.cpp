@@ -66,8 +66,16 @@ int main() {
 
 	for (const auto& animation : gltf.animations) {
 		std::cout << "animation name: " << animation.first << "\n";
+		size_t counter = 0;
 		for (const auto& sampler : animation.second.samplers) {
-			std::cout << "input: " << sampler.input << "\n";
+			std::cout << "output " << sampler.output << " at " << counter << "\n";
+			std::vector<float> inputs;
+			gltf.getAnimationData(inputs, animation.first, counter, "output");
+			counter++;
+			for (const auto& inputVec : inputs) {
+				std::cout << inputVec << ", ";
+			}
+			std::cout << "\n";
 		}
 		std::cout << "\n";
 		for (const auto& channel : animation.second.channels) {
