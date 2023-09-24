@@ -28,6 +28,11 @@ using namespace rapidjson;
         int target;
     };
 
+    struct SkinAttributes {
+        int inverseMatrixId;
+        std::vector<int> joints;
+    };
+
     struct BufferInfo {
         int byteLength;
         std::string uri;
@@ -41,10 +46,11 @@ using namespace rapidjson;
     };
 
     struct NodeAttributes {
+        std::string name;
         std::unordered_map<std::string, int> attributes;
-        NodeAttributes() {};
-        NodeAttributes(const std::unordered_map<std::string, int>& argAttributes) :
-            attributes(argAttributes) {};
+        //NodeAttributes() {};
+       /* NodeAttributes(const std::unordered_map<std::string, int>& argAttributes) :
+            attributes(argAttributes) {};*/
     };
 
     struct AnimationSampler {
@@ -79,8 +85,8 @@ using namespace rapidjson;
             const int accessorIndex  = meshes[objectName].attributes[attributeName];
             const auto& accessor = accessors[accessorIndex];
             const auto& bufferView = bufferViews[accessor.bufferView];
-            const int bufferSize = bufferView.byteLength;
-            const int byteOffset = bufferView.byteOffset;
+            const size_t bufferSize = bufferView.byteLength;
+            const size_t byteOffset = bufferView.byteOffset;
 
             dstVector.resize(bufferSize / sizeof(VectorType));
             std::memcpy(dstVector.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
@@ -104,8 +110,17 @@ using namespace rapidjson;
             std::vector<VectorType>& dstVector,
             const std::string& objectName, const int samplerId,
             const std::string& attributeName) {
-
-            const int accessorIndex = animations[objectName].samplers[samplerId].output;
+            int accessorIndex;
+            if (attributeName == "output") {
+                accessorIndex = animations[objectName].samplers[samplerId].output;
+            }
+            else if (attributeName == "input") {
+                accessorIndex = animations[objectName].samplers[samplerId].input;
+            }
+            else {
+                std::cout << "there was a problem while reading attributeName in getAnimationData" << "\n";
+                return;
+            }
             const auto& accessor = accessors[accessorIndex];
             const auto& bufferView = bufferViews[accessor.bufferView];
             const int bufferSize = bufferView.byteLength;
@@ -116,8 +131,13 @@ using namespace rapidjson;
         }
 
         std::unordered_map<std::string, MeshAttributes> meshes;
-        std::unordered_map<std::string, NodeAttributes> nodes;
+        std::vector<NodeAttributes> nodes;
+        std::unordered_map<std::string, SkinAttributes> skins;
         std::unordered_map<std::string, Animation> animations;
+
+        void printNodeNames();
+        void printMeshData(const std::string& objectName, const std::string& attributeName);
+
     private:
         static const int SCALAR{ 0 };
         static const int VEC2{ 1 };
@@ -152,8 +172,8 @@ using namespace rapidjson;
             const rapidjson::Value& cnannelsObj);
 
 
-        void readNodes( std::unordered_map<std::string, NodeAttributes>& nodes);
-
+        void readNodes(std::vector<NodeAttributes> &nodes);
+        void readSkins(std::unordered_map<std::string, SkinAttributes>& skins);
         void readMeshes(std::unordered_map<std::string, MeshAttributes>& meshes);
 
 
@@ -164,17 +184,6 @@ using namespace rapidjson;
 
         void writeBuffers();
         void writeBigBuffers();
-
-
-        /*std::variant<
-            std::vector<unsigned short>,
-            std::vector<signed char>,
-            std::vector<unsigned char>,
-            std::vector<short>,
-            std::vector<unsigned int>,
-            std::vector<float>>   getDataAuto(const int objectId, const std::string& attributeName);*/
-
-
         void convertBuffers();
         
         int convertStringToIntType(const std::string& stringType) {

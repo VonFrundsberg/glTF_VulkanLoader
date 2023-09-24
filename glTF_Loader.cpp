@@ -3,13 +3,13 @@
 #include <vector>
 #include <filesystem>
 
-std::string splitFilename(const std::string& str)
+std::string splitFilename(const std::string& filePath)
 {
+	//returns path to the folder where file is located
 	size_t found;
-	found = str.find_last_of("/\\");
-	std::string result(str.substr(0, found).c_str());
-	return result;
-	//std::cout << " file: " << str.substr(found + 1) << "\n";
+	found = filePath.find_last_of("/\\");
+	std::string filePathFolder(filePath.substr(0, found).c_str());
+	return filePathFolder;
 }
 GLTF_Loader::GLTF_Loader(const std::string& filepath)
 {
@@ -37,8 +37,14 @@ GLTF_Loader::GLTF_Loader(const std::string& filepath)
 	if (modelInfo.HasMember("animations")) {
 		readAnimations();
 	}
-	readAccessors(accessors);
 
+	if (modelInfo.HasMember("skins")) {
+			readSkins(skins);
+	}
+
+
+
+	readAccessors(accessors);
 	readBufferViews(bufferViews);
 	readBufferInfos(bufferInfos, filepath);
 	file.close();
@@ -46,7 +52,7 @@ GLTF_Loader::GLTF_Loader(const std::string& filepath)
 	writeBigBuffers();
 }
 
-void GLTF_Loader::readNodes(std::unordered_map<std::string, NodeAttributes>& nodes) {
+void GLTF_Loader::readNodes(std::vector<NodeAttributes>& nodes) {
 
 	const auto& nodesArr = modelInfo["nodes"].GetArray();
 	for (const auto& node : nodesArr) {
@@ -55,7 +61,6 @@ void GLTF_Loader::readNodes(std::unordered_map<std::string, NodeAttributes>& nod
 		nodes.emplace(nodeName, nodeAttributes);
 	}
 }
-
 void GLTF_Loader::readMeshes(std::unordered_map<std::string, MeshAttributes>& meshes) {
 
 	const auto& meshesArr = modelInfo["meshes"].GetArray();
@@ -129,7 +134,6 @@ void GLTF_Loader::readBufferInfos(std::vector<BufferInfo>& bufferInfos, const st
 		bufferInfos.push_back(bufferInfo);
 	}
 }
-
 void GLTF_Loader::writeBigBuffers() {
 	const int bufferInfosSize = bufferInfos.size();
 	bigBuffers.reserve(bufferInfosSize);
@@ -158,8 +162,6 @@ void GLTF_Loader::readAnimationSamplers(std::vector<AnimationSampler>& animation
 	}
 
 }
-
-
 void GLTF_Loader::readAnimationChannels(std::vector<AnimationChannel>& animationChannels,
 	const rapidjson::Value& cnannelsObj) {
 	const auto& channelsArr = cnannelsObj.GetArray();
@@ -191,7 +193,6 @@ void GLTF_Loader::readAnimations()
 	}
 
 }
-
 void GLTF_Loader::writeBuffers()
 {
 	const int bufferInfosSize = bufferInfos.size();
@@ -220,63 +221,6 @@ void GLTF_Loader::writeBuffers()
 		}
 	}
 }
-
-//std::variant<
-//	std::vector<unsigned short>,
-//	std::vector<signed char>,
-//	std::vector<unsigned char>,
-//	std::vector<short>,
-//	std::vector<unsigned int>,
-//	std::vector<float>> GLTF_Loader::getDataAuto(
-//		const int objectId,
-//		const std::string& attributeName)
-//{
-//	const int accessorIndex = meshes[objectId].attributes[attributeName];
-//	const auto& accessor = accessors[accessorIndex];
-//	const auto& bufferView = bufferViews[accessor.bufferView];
-//	const int bufferSize = bufferView.byteLength;
-//	const int byteOffset = bufferView.byteOffset;
-//	switch (accessor.componentType) {
-//	case UNSIGNED_SHORT: {
-//		std::cout << "scalars:" << "\n";
-//		std::vector<unsigned short> scalars(bufferSize / sizeof(unsigned short));
-//		std::memcpy(scalars.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
-//		return scalars;
-//	}
-//	case SIGNED_BYTE: {
-//		std::cout << "chars:" << "\n";
-//		std::vector<signed char> chars(bufferSize);
-//		std::memcpy(chars.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
-//		return chars;
-//	}
-//	case UNSIGNED_BYTE: {
-//		std::cout << "unsigned chars:" << "\n";
-//		std::vector<unsigned char> chars(bufferSize / sizeof(unsigned char));
-//		std::memcpy(chars.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
-//		return chars;
-//	}
-//	case SIGNED_SHORT: {
-//		std::cout << "signed shorts:" << "\n";
-//		std::vector<short> shorts(bufferSize / sizeof(short));
-//		std::memcpy(shorts.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
-//		return shorts;
-//	}
-//	case UNSIGNED_INT: {
-//		std::cout << "unsigned ints" << "\n";
-//		std::vector<unsigned int> uints(bufferSize / sizeof(unsigned int));
-//		std::memcpy(uints.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
-//		return uints;
-//	}
-//	case FLOAT: {
-//		std::cout << "floats" << "\n";
-//		std::vector<float> floats(bufferSize / sizeof(float));
-//		std::memcpy(floats.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
-//		return floats;
-//	}
-//	}
-//}
-
-
 void GLTF_Loader::convertBuffers() {
 
 	const int bufferInfosSize = bufferInfos.size();
@@ -364,4 +308,106 @@ void GLTF_Loader::convertBuffers() {
 		}
 		}
 	}
+}
+
+void GLTF_Loader::readSkins(std::unordered_map<std::string, SkinAttributes>& skins)
+{
+	const auto& skinsArr = modelInfo["skins"].GetArray();
+	for (const auto& skin : skinsArr) {
+		const auto& skinName = skin.GetObject()["name"].GetString();
+		SkinAttributes skinAttributes{};
+		skinAttributes.inverseMatrixId = skin.GetObject()["inverseBindMatrices"].GetInt();
+		std::vector<int> jointVector{};
+		const auto& jointIdArr = skin.GetObject()["joints"].GetArray();
+		for (const auto& jointId : jointIdArr){
+			jointVector.push_back(jointId.GetInt());
+		}
+		skinAttributes.joints = jointVector;
+		skins.emplace(skinName, skinAttributes);
+	}
+}
+
+void GLTF_Loader::printNodeNames()
+{
+	for (const auto& obj : this->nodes) {
+		std::cout << obj.first << ", ";
+	}
+	std::cout << "\n";
+}
+void GLTF_Loader::printMeshData(const std::string& objectName, const std::string& attributeName) {
+	const int accessorIndex = meshes[objectName].attributes[attributeName];
+	const auto& accessor = accessors[accessorIndex];
+	const auto& bufferView = bufferViews[accessor.bufferView];
+	const int bufferSize = bufferView.byteLength;
+	const int byteOffset = bufferView.byteOffset;
+
+	switch (accessor.componentType) {
+	case UNSIGNED_SHORT: {
+		std::vector<unsigned short> scalars(bufferSize / sizeof(unsigned short));
+		std::memcpy(scalars.data(), buffers[accessorIndex].data(), bufferSize);
+		int i = 0;
+		for (auto& obj : scalars) {
+			i++;
+			std::cout << obj << ", ";
+		}
+		std::cout << int(i) << " ushorts" << "\n";
+		break;
+	}
+	case SIGNED_BYTE: {
+		std::vector<signed char> chars(bufferSize);
+		std::memcpy(chars.data(), buffers[accessorIndex].data(), bufferSize);
+		int i = 0;
+		for (auto& obj : chars) {
+			i++;
+			std::cout << obj << ", ";
+		}
+		std::cout << int(i) << " chars" << "\n";
+		break;
+	}
+	case UNSIGNED_BYTE: {
+		std::vector<unsigned char> chars(bufferSize / sizeof(unsigned char));
+		std::memcpy(chars.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+		int i = 0;
+		for (auto& obj : chars) {
+			i++;
+			std::cout << static_cast<unsigned>(obj) << ", ";
+		}
+		std::cout << int(i) << " uchars" << "\n";
+		break;
+	}
+	case SIGNED_SHORT: {
+		std::vector<short> shorts(bufferSize / sizeof(short));
+		std::memcpy(shorts.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+		int i = 0;
+		for (auto& obj : shorts) {
+			i++;
+			std::cout << obj << ", ";
+		}
+		std::cout << int(i) << " objects" << "\n";
+		break;
+	}
+	case UNSIGNED_INT: {
+		std::vector<unsigned int> uints(bufferSize / sizeof(unsigned int));
+		std::memcpy(uints.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+		int i = 0;
+		for (auto& obj : uints) {
+			i++;
+			std::cout << obj << ", ";
+		}
+		std::cout << int(i) << " uints" << "\n";
+		break;
+	}
+	case FLOAT: {
+		std::vector<float> floats(bufferSize / sizeof(float));
+		std::memcpy(floats.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+		int i = 0;
+		for (auto& obj : floats) {
+			i++;
+			std::cout << obj << ", ";
+		}
+		std::cout << int(i) << " floats" << "\n";
+		break;
+	}
+	}
+
 }
