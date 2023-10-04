@@ -2,7 +2,7 @@
 #include "glTF_Loader.hpp"
 
 int main() {
-	auto gltf = GLTF_Loader("glTF/cube_2bones_simple_rot.gltf");
+	auto gltf = GLTF_Loader("glTF/skeletal_block.gltf");
 	
 	std::cout << "NODES:";
 	std::cout << "\n";

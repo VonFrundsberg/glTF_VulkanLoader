@@ -12,7 +12,8 @@ std::string splitFilename(const std::string& filePath)
 	return filePathFolder;
 }
 GLTF_Loader::GLTF_Loader(const std::string& filepath)
-{
+{	
+	std::cout << filepath;
 	// Open the file
 	std::ifstream file(filepath);
 
@@ -55,12 +56,13 @@ GLTF_Loader::GLTF_Loader(const std::string& filepath)
 void GLTF_Loader::readNodes(std::vector<NodeAttributes>& nodes) {
 
 	const auto& nodesArr = modelInfo["nodes"].GetArray();
-	for (const auto& node : nodesArr) {
+	/*for (const auto& node : nodesArr) {
 		const auto& nodeName = node.GetObject()["name"].GetString();
 		NodeAttributes nodeAttributes{};
 		nodes.emplace(nodeName, nodeAttributes);
-	}
+	}*/
 }
+
 void GLTF_Loader::readMeshes(std::unordered_map<std::string, MeshAttributes>& meshes) {
 
 	const auto& meshesArr = modelInfo["meshes"].GetArray();
@@ -330,7 +332,7 @@ void GLTF_Loader::readSkins(std::unordered_map<std::string, SkinAttributes>& ski
 void GLTF_Loader::printNodeNames()
 {
 	for (const auto& obj : this->nodes) {
-		std::cout << obj.first << ", ";
+		std::cout << obj.name << ", ";
 	}
 	std::cout << "\n";
 }
