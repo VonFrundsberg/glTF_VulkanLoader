@@ -15,14 +15,14 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(rapidjson)
 
+add_library(glTF_VulkanLoaderLib STATIC glTF_Loader.cpp)
+#target_include_directories(glTF_VulkanLoaderLib PUBLIC "${CMAKE_BINARY_DIR}/_deps/rapidjson-src/include")
+target_include_directories(glTF_VulkanLoaderLib PUBLIC "${rapidjson_SOURCE_DIR}/include")
 
 
 add_executable(glTF_VulkanLoader Source.cpp)
-add_library(glTF_VulkanLoaderLib STATIC glTF_Loader.cpp)
-#target_include_directories(glTF_VulkanLoader PRIVATE "${rapidjson_SOURCE_DIR}")
 target_link_libraries(glTF_VulkanLoader PRIVATE glTF_VulkanLoaderLib)
-
+#set_property(TARGET glTF_VulkanLoader PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 target_include_directories(glTF_VulkanLoader PUBLIC
                            "${PROJECT_BINARY_DIR}"
-                           "${rapidjson_SOURCE_DIR}/include"
                            )
