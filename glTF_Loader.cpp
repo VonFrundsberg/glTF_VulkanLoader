@@ -111,8 +111,8 @@ void GLTF_Loader::readAccessors(std::vector<Accessor>& accessors)
 void GLTF_Loader::readBufferViews(std::vector<BufferView>& bufferViews)
 {
 	const auto& buffeViewsArr = modelInfo["bufferViews"].GetArray();
-	for (auto& bufferView : buffeViewsArr) {
-		const auto& bufferViewObj = bufferView.GetObject();
+	for (auto& bufferViewIter : buffeViewsArr) {
+		const auto& bufferViewObj = bufferViewIter.GetObject();
 		BufferView bufferView{
 			bufferViewObj["buffer"].GetInt(),
 			bufferViewObj["byteLength"].GetInt(),
@@ -128,8 +128,8 @@ void GLTF_Loader::readBufferInfos(std::vector<BufferInfo>& bufferInfos, const st
 {
 	const auto& buffersArr = modelInfo["buffers"].GetArray();
 	std::string pathToBin(splitFilename(filepath) + "\\");
-	for (auto& bufferInfo : buffersArr) {
-		const auto& bufferInfoObj = bufferInfo.GetObject();
+	for (auto& bufferInfoIter : buffersArr) {
+		const auto& bufferInfoObj = bufferInfoIter.GetObject();
 		BufferInfo bufferInfo{
 			bufferInfoObj["byteLength"].GetInt(),
 			pathToBin + bufferInfoObj["uri"].GetString() };
