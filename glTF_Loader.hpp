@@ -4,7 +4,8 @@
 #include <fstream>
 #include <unordered_map>
 #include <variant>
-
+#include <glm.hpp>
+#include <gtc/type_ptr.hpp>
 using namespace rapidjson;
 
     constexpr unsigned int hash(const char* s, int off = 0) {
@@ -91,6 +92,25 @@ using namespace rapidjson;
 
             dstVector.resize(bufferSize / sizeof(VectorType));
             std::memcpy(dstVector.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+        }
+
+        
+        void getInverseSkinMatrices(
+            std::vector<glm::mat4>& dstMatricesVector, const std::string& objectName) {
+            const int accessorIndex = this->skins[objectName].inverseMatrixId;
+            const auto& accessor = accessors[accessorIndex];
+            const auto& bufferView = bufferViews[accessor.bufferView];
+            const int bufferSize = bufferView.byteLength;
+            const int byteOffset = bufferView.byteOffset;
+            const int vectorSize = skins[objectName].joints.size();
+            dstMatricesVector.resize(vectorSize);
+            for (int i = 0; i < vectorSize; i++) {
+                std::memcpy(glm::value_ptr(dstMatricesVector[i]),
+                    (bigBuffers[bufferView.bufferId]).data() + byteOffset + i*16*sizeof(float),
+                    int(bufferSize/ vectorSize));
+            }
+
+
         }
 
         /*template <typename VectorType>

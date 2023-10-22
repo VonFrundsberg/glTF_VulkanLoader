@@ -1,5 +1,6 @@
 #include <iostream>
 #include "glTF_Loader.hpp"
+#include <gtx/string_cast.hpp>
 
 int main() {
 	auto gltf = GLTF_Loader("glTF/flexing_cube.gltf");
@@ -14,6 +15,11 @@ int main() {
 	std::cout << "skins inverse matrices:";
 	std::cout << "\n";
 	gltf.printInverseSkinMatrix("Armature");
+	std::vector<glm::mat4> invMatrices;
+	gltf.getInverseSkinMatrices(invMatrices, "Armature");
+	for (int i = 0; i < 3; i++) {
+		std::cout << glm::to_string(invMatrices[i]) << "\n";
+	}
 	/*std::cout << "JOINTS:";
 	std::cout << "\n";
 	gltf.printMeshData("Cube.001", "JOINTS_0");

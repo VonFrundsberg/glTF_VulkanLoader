@@ -524,6 +524,7 @@ void GLTF_Loader::printInverseSkinMatrix(const std::string& objectName)
 	std::memcpy(floats.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
 	int i = 0;
 	for (auto& obj : floats) {
+		i++;
 		if (i % 16 > 0) {
 			std::cout << obj << ", ";
 		}
@@ -531,10 +532,10 @@ void GLTF_Loader::printInverseSkinMatrix(const std::string& objectName)
 			std::cout << obj << "}, \n {";
 		}
 		else if (i == 0) {
-			std::cout << "{" << obj ;
+			std::cout << "{" << obj << ", ";
 		}
 		if (i % 4 == 0 && i != 0) std::cout << "\n";
-		i++;
+		
 	}
 	std::cout << "} \n";
 	std::cout << int(i) << " floats amount" << "\n";

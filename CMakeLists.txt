@@ -15,7 +15,10 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(rapidjson)
 add_library(glTF_VulkanLoaderLib STATIC glTF_Loader.cpp)
 #target_include_directories(glTF_VulkanLoaderLib PUBLIC "${CMAKE_BINARY_DIR}/_deps/rapidjson-src/include")
-target_include_directories(glTF_VulkanLoaderLib PUBLIC "${rapidjson_SOURCE_DIR}/include")
+find_package(Vulkan REQUIRED)
+target_include_directories(glTF_VulkanLoaderLib PUBLIC 
+"${rapidjson_SOURCE_DIR}/include"
+"${Vulkan_INCLUDE_DIR}/glm")
 
 set(FETCHCONTENT_SOURCE_DIR_GLTF_VULKANLOADER ${CMAKE_CURRENT_SOURCE_DIR})
 add_executable(glTF_VulkanLoader Source.cpp)
