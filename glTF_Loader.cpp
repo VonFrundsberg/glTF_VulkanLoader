@@ -1,6 +1,7 @@
 #include "glTF_Loader.hpp"
 #include "glTF_Loader.hpp"
 #include "glTF_Loader.hpp"
+#include "glTF_Loader.hpp"
 #include <array>
 #include <vector>
 #include <filesystem>
@@ -44,8 +45,6 @@ GLTF_Loader::GLTF_Loader(const std::string& filepath)
 	if (modelInfo.HasMember("skins")) {
 			readSkins(skins);
 	}
-
-
 
 	readAccessors(accessors);
 	readBufferViews(bufferViews);
@@ -511,4 +510,32 @@ void GLTF_Loader::printMeshData(const std::string& objectName, const std::string
 	}
 	}
 
+}
+
+void GLTF_Loader::printInverseSkinMatrix(const std::string& objectName)
+{
+	const int accessorIndex = this->skins[objectName].inverseMatrixId;
+	const auto& accessor = accessors[accessorIndex];
+	const auto& bufferView = bufferViews[accessor.bufferView];
+	const int bufferSize = bufferView.byteLength;
+	const int byteOffset = bufferView.byteOffset;
+
+	std::vector<float> floats(bufferSize / sizeof(float));
+	std::memcpy(floats.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
+	int i = 0;
+	for (auto& obj : floats) {
+		if (i % 16 > 0) {
+			std::cout << obj << ", ";
+		}
+		else if(i > 0) {
+			std::cout << obj << "}, \n {";
+		}
+		else if (i == 0) {
+			std::cout << "{" << obj ;
+		}
+		if (i % 4 == 0 && i != 0) std::cout << "\n";
+		i++;
+	}
+	std::cout << "} \n";
+	std::cout << int(i) << " floats amount" << "\n";
 }

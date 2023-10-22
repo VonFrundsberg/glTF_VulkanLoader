@@ -139,8 +139,9 @@ using namespace rapidjson;
         void printNodeInfos(const bool showTRS = false);
         void printSkinInfos();
         void printNodeNames();
-        void printMeshData(const std::string& objectName, const std::string& attributeName);
 
+        void printMeshData(const std::string& objectName, const std::string& attributeName);
+        void printInverseSkinMatrix(const std::string& objectName);
     private:
         static const int SCALAR{ 0 };
         static const int VEC2{ 1 };

@@ -11,6 +11,9 @@ int main() {
 	std::cout << "SKINS:";
 	std::cout << "\n";
 	gltf.printSkinInfos();
+	std::cout << "skins inverse matrices:";
+	std::cout << "\n";
+	gltf.printInverseSkinMatrix("Armature");
 	/*std::cout << "JOINTS:";
 	std::cout << "\n";
 	gltf.printMeshData("Cube.001", "JOINTS_0");
