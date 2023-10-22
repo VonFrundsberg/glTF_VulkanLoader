@@ -7,9 +7,11 @@ int main() {
 	std::cout << "\n";
 	std::cout << "NODES:";
 	std::cout << "\n";
-	//gltf.printNodeNames();
 	gltf.printNodeInfos();
-	std::cout << "JOINTS:";
+	std::cout << "SKINS:";
+	std::cout << "\n";
+	gltf.printSkinInfos();
+	/*std::cout << "JOINTS:";
 	std::cout << "\n";
 	gltf.printMeshData("Cube.001", "JOINTS_0");
 	std::cout << "WEIGHTS:";
@@ -18,7 +20,7 @@ int main() {
 	std::cout << "POSITIONS:";
 	std::cout << "\n";
 	gltf.printMeshData("Cube.001", "POSITIONS");
-	int i = 1;
+	int i = 1;*/
 
 	/*for (const auto& animation : gltf.animations) {
 		std::cout << "animation name: " << animation.first << "\n";

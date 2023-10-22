@@ -1,5 +1,6 @@
 #include "glTF_Loader.hpp"
 #include "glTF_Loader.hpp"
+#include "glTF_Loader.hpp"
 #include <array>
 #include <vector>
 #include <filesystem>
@@ -412,6 +413,19 @@ void GLTF_Loader::printNodeInfos(const bool showTRS)
 		}
 	}
 	std::cout << "\n";
+}
+
+void GLTF_Loader::printSkinInfos()
+{
+	for (const auto& obj : this->skins) {
+		std::cout << "name: " << obj.first << "\n";
+		std::cout << "inverseMatrixId: " << obj.second.inverseMatrixId << "\n";
+		std::cout << "joints: " << "\n";
+		for (const int& jointId : obj.second.joints) {
+			std::cout << jointId << ", ";
+		}
+		std::cout << "\n";
+	}
 }
 
 void GLTF_Loader::printNodeNames()

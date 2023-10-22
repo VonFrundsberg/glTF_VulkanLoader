@@ -93,7 +93,7 @@ using namespace rapidjson;
             std::memcpy(dstVector.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
         }
 
-        template <typename VectorType>
+        /*template <typename VectorType>
         void getNodeData(
             std::vector<VectorType>& dstVector, const std::string& objectName, const std::string& attributeName) {
             const int accessorIndex = meshes[objectName].attributes[attributeName];
@@ -104,7 +104,7 @@ using namespace rapidjson;
 
             dstVector.resize(bufferSize / sizeof(VectorType));
             std::memcpy(dstVector.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
-        }
+        }*/
 
         template <typename VectorType>
         void getAnimationData(
@@ -137,6 +137,7 @@ using namespace rapidjson;
         std::unordered_map<std::string, Animation> animations;
 
         void printNodeInfos(const bool showTRS = false);
+        void printSkinInfos();
         void printNodeNames();
         void printMeshData(const std::string& objectName, const std::string& attributeName);
 
