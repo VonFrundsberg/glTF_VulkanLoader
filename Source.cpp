@@ -2,17 +2,25 @@
 #include "glTF_Loader.hpp"
 
 int main() {
-	auto gltf = GLTF_Loader("glTF/skeletal_block.gltf");
+	auto gltf = GLTF_Loader("glTF/flexing_cube.gltf");
 	
+	std::cout << "\n";
 	std::cout << "NODES:";
 	std::cout << "\n";
-	gltf.printNodeNames();
-	gltf.printMeshData("Cube", "JOINTS_0");
-	gltf.printMeshData("Cube", "WEIGHTS_0");
-	gltf.printMeshData("Cube", "POSITIONS");
+	//gltf.printNodeNames();
+	gltf.printNodeInfos();
+	std::cout << "JOINTS:";
+	std::cout << "\n";
+	gltf.printMeshData("Cube.001", "JOINTS_0");
+	std::cout << "WEIGHTS:";
+	std::cout << "\n";
+	gltf.printMeshData("Cube.001", "WEIGHTS_0");
+	std::cout << "POSITIONS:";
+	std::cout << "\n";
+	gltf.printMeshData("Cube.001", "POSITIONS");
 	int i = 1;
 
-	for (const auto& animation : gltf.animations) {
+	/*for (const auto& animation : gltf.animations) {
 		std::cout << "animation name: " << animation.first << "\n";
 		size_t counter = 0;
 		for (const auto& sampler : animation.second.samplers) {
@@ -44,6 +52,6 @@ int main() {
 		for (const auto& channel : animation.second.channels) {
 			std::cout << "output " << channel.targetPath << "\n";
 		}
-	}
+	}*/
 	
 }

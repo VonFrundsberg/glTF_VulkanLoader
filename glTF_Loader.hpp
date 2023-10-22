@@ -46,11 +46,12 @@ using namespace rapidjson;
     };
 
     struct NodeAttributes {
-        std::string name;
-        std::unordered_map<std::string, int> attributes;
-        //NodeAttributes() {};
-       /* NodeAttributes(const std::unordered_map<std::string, int>& argAttributes) :
-            attributes(argAttributes) {};*/
+        int meshId{-1};
+        int skinId{-1};
+        std::vector<int> children{};
+        std::vector<float> translation{ 0.0f, 0.0f, 0.0f};
+        std::vector<float> rotation{ 0.0f, 0.0f, 0.0f, 0.0f};
+        std::vector<float> scale{ 0.0f, 0.0f, 0.0f};
     };
 
     struct AnimationSampler {
@@ -95,7 +96,7 @@ using namespace rapidjson;
         template <typename VectorType>
         void getNodeData(
             std::vector<VectorType>& dstVector, const std::string& objectName, const std::string& attributeName) {
-            const int accessorIndex = nodes[objectName].attributes[attributeName];
+            const int accessorIndex = meshes[objectName].attributes[attributeName];
             const auto& accessor = accessors[accessorIndex];
             const auto& bufferView = bufferViews[accessor.bufferView];
             const int bufferSize = bufferView.byteLength;
@@ -131,10 +132,11 @@ using namespace rapidjson;
         }
 
         std::unordered_map<std::string, MeshAttributes> meshes;
-        std::vector<NodeAttributes> nodes;
+        std::unordered_map<std::string, NodeAttributes> nodes;
         std::unordered_map<std::string, SkinAttributes> skins;
         std::unordered_map<std::string, Animation> animations;
 
+        void printNodeInfos(const bool showTRS = false);
         void printNodeNames();
         void printMeshData(const std::string& objectName, const std::string& attributeName);
 
@@ -172,7 +174,7 @@ using namespace rapidjson;
             const rapidjson::Value& cnannelsObj);
 
 
-        void readNodes(std::vector<NodeAttributes> &nodes);
+        void readNodes(std::unordered_map<std::string, NodeAttributes> &nodes);
         void readSkins(std::unordered_map<std::string, SkinAttributes>& skins);
         void readMeshes(std::unordered_map<std::string, MeshAttributes>& meshes);
 

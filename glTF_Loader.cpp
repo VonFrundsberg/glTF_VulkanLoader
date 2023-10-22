@@ -1,4 +1,5 @@
 #include "glTF_Loader.hpp"
+#include "glTF_Loader.hpp"
 #include <array>
 #include <vector>
 #include <filesystem>
@@ -53,14 +54,68 @@ GLTF_Loader::GLTF_Loader(const std::string& filepath)
 	writeBigBuffers();
 }
 
-void GLTF_Loader::readNodes(std::vector<NodeAttributes>& nodes) {
+void GLTF_Loader::readNodes(std::unordered_map<std::string, NodeAttributes>& nodes) {
 
 	const auto& nodesArr = modelInfo["nodes"].GetArray();
-	/*for (const auto& node : nodesArr) {
-		const auto& nodeName = node.GetObject()["name"].GetString();
+	for (const auto& nodeIter : nodesArr) {
+		const auto& nodeObject = nodeIter.GetObject();
+		const auto& nodeName = nodeObject["name"].GetString();
 		NodeAttributes nodeAttributes{};
+		
+
+		if (nodeObject.HasMember("children")) {
+			const auto& childrenAttr = nodeObject["children"].GetArray();
+			int i = 0;
+			for (const auto& childrenId : childrenAttr) {
+				{
+					nodeAttributes.children.push_back(childrenId.GetInt());
+					i++;
+				}
+			}
+		}
+
+		if (nodeObject.HasMember("rotation")) {
+			const auto& rotationAttr = nodeObject["rotation"].GetArray();
+			int i = 0;
+			for (auto& rotationValue : rotationAttr) {
+				{
+					nodeAttributes.rotation[i] = rotationValue.GetFloat();
+					i++;
+				}
+			}
+		}
+
+		if (nodeObject.HasMember("translation")) {
+			const auto& translationAttr = nodeObject["translation"].GetArray();
+			int i = 0;
+			for (auto& translationValue : translationAttr) {
+				{
+					nodeAttributes.translation[i] = translationValue.GetFloat();
+					i++;
+				}
+			}
+		}
+
+		if (nodeObject.HasMember("scale")) {
+			const auto& scaleAttr = nodeObject["scale"].GetArray();
+			int i = 0;
+			for (auto& scaleValue : scaleAttr) {
+				{
+					nodeAttributes.scale[i] = scaleValue.GetFloat();
+					i++;
+				}
+			}
+		}
+
+		if (nodeObject.HasMember("mesh")) {
+			nodeAttributes.meshId = nodeObject["mesh"].GetInt();
+		}
+
+		if (nodeObject.HasMember("skin")) {
+			nodeAttributes.skinId = nodeObject["skin"].GetInt();
+		}
 		nodes.emplace(nodeName, nodeAttributes);
-	}*/
+	}
 }
 
 void GLTF_Loader::readMeshes(std::unordered_map<std::string, MeshAttributes>& meshes) {
@@ -83,12 +138,9 @@ void GLTF_Loader::readMeshes(std::unordered_map<std::string, MeshAttributes>& me
 				itr != attributes.MemberEnd(); ++itr)
 			{
 				primitives.emplace(itr->name.GetString(), itr->value.GetInt());
-				//std::cout << itr->name.GetString() << ": " << itr->value.GetUint() << "\n";
 			}
 
 			if (primitiveObj.HasMember("indices")) {
-				//const auto& indices = primitiveObj["indices"].GetUint();
-				//std::cout << "indices: " << indices << "\n";
 				primitives.emplace("indices", primitiveObj["indices"].GetInt());
 			}
 		}
@@ -329,10 +381,43 @@ void GLTF_Loader::readSkins(std::unordered_map<std::string, SkinAttributes>& ski
 	}
 }
 
+void GLTF_Loader::printNodeInfos(const bool showTRS)
+{
+	for (const auto& obj : this->nodes) {
+		std::cout << "name: " << obj.first << "\n";
+		std::cout << "mesh: " << obj.second.meshId << ", " << "skin: " << obj.second.skinId << "\n";
+		std::cout << "children: " << "\n";
+		for (const int& childrenId : obj.second.children) {
+			std::cout << childrenId << ", ";
+		}
+		std::cout << "\n";
+		if (showTRS) {
+			std::cout << "rotation: " << "\n";
+			for (const float& rotationId : obj.second.rotation) {
+				std::cout << rotationId << ", ";
+			}
+			std::cout << "\n";
+
+			std::cout << "translation: " << "\n";
+			for (const float& translationId : obj.second.translation) {
+				std::cout << translationId << ", ";
+			}
+			std::cout << "\n";
+
+			std::cout << "scale: " << "\n";
+			for (const float& scaleId : obj.second.scale) {
+				std::cout << scaleId << ", ";
+			}
+			std::cout << "\n";
+		}
+	}
+	std::cout << "\n";
+}
+
 void GLTF_Loader::printNodeNames()
 {
 	for (const auto& obj : this->nodes) {
-		std::cout << obj.name << ", ";
+		std::cout << obj.first << ", ";
 	}
 	std::cout << "\n";
 }
