@@ -47,6 +47,7 @@ using namespace rapidjson;
     };
 
     struct NodeAttributes {
+        std::string name;
         int meshId{-1};
         int skinId{-1};
         std::vector<int> children{};
@@ -94,7 +95,12 @@ using namespace rapidjson;
             std::memcpy(dstVector.data(), (bigBuffers[bufferView.bufferId]).data() + byteOffset, bufferSize);
         }
 
-        
+        void getJointsVector(std::vector<int>& dstJointsVector, const std::string& objectName) {
+            //const int vectorSize = skins[objectName].joints.size();
+            //dstJointsVector.resize(vectorSize);
+            dstJointsVector = skins[objectName].joints;
+        }
+
         void getInverseSkinMatrices(
             std::vector<glm::mat4>& dstMatricesVector, const std::string& objectName) {
             const int accessorIndex = this->skins[objectName].inverseMatrixId;
@@ -152,13 +158,12 @@ using namespace rapidjson;
         }
 
         std::unordered_map<std::string, MeshAttributes> meshes;
-        std::unordered_map<std::string, NodeAttributes> nodes;
+        std::vector<NodeAttributes> nodes;
         std::unordered_map<std::string, SkinAttributes> skins;
         std::unordered_map<std::string, Animation> animations;
 
         void printNodeInfos(const bool showTRS = false);
         void printSkinInfos();
-        void printNodeNames();
 
         void printMeshData(const std::string& objectName, const std::string& attributeName);
         void printInverseSkinMatrix(const std::string& objectName);
@@ -196,7 +201,7 @@ using namespace rapidjson;
             const rapidjson::Value& cnannelsObj);
 
 
-        void readNodes(std::unordered_map<std::string, NodeAttributes> &nodes);
+        void readNodes(std::vector<NodeAttributes> &nodes);
         void readSkins(std::unordered_map<std::string, SkinAttributes>& skins);
         void readMeshes(std::unordered_map<std::string, MeshAttributes>& meshes);
 

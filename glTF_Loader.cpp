@@ -54,14 +54,15 @@ GLTF_Loader::GLTF_Loader(const std::string& filepath)
 	writeBigBuffers();
 }
 
-void GLTF_Loader::readNodes(std::unordered_map<std::string, NodeAttributes>& nodes) {
+void GLTF_Loader::readNodes(std::vector<NodeAttributes>& nodes) {
 
 	const auto& nodesArr = modelInfo["nodes"].GetArray();
 	for (const auto& nodeIter : nodesArr) {
 		const auto& nodeObject = nodeIter.GetObject();
-		const auto& nodeName = nodeObject["name"].GetString();
+
+
 		NodeAttributes nodeAttributes{};
-		
+		nodeAttributes.name = nodeObject["name"].GetString();
 
 		if (nodeObject.HasMember("children")) {
 			const auto& childrenAttr = nodeObject["children"].GetArray();
@@ -114,7 +115,7 @@ void GLTF_Loader::readNodes(std::unordered_map<std::string, NodeAttributes>& nod
 		if (nodeObject.HasMember("skin")) {
 			nodeAttributes.skinId = nodeObject["skin"].GetInt();
 		}
-		nodes.emplace(nodeName, nodeAttributes);
+		nodes.push_back(nodeAttributes);
 	}
 }
 
@@ -384,28 +385,28 @@ void GLTF_Loader::readSkins(std::unordered_map<std::string, SkinAttributes>& ski
 void GLTF_Loader::printNodeInfos(const bool showTRS)
 {
 	for (const auto& obj : this->nodes) {
-		std::cout << "name: " << obj.first << "\n";
-		std::cout << "mesh: " << obj.second.meshId << ", " << "skin: " << obj.second.skinId << "\n";
+		std::cout << "name: " << obj.name << "\n";
+		std::cout << "mesh: " << obj.meshId << ", " << "skin: " << obj.skinId << "\n";
 		std::cout << "children: " << "\n";
-		for (const int& childrenId : obj.second.children) {
+		for (const int& childrenId : obj.children) {
 			std::cout << childrenId << ", ";
 		}
 		std::cout << "\n";
 		if (showTRS) {
 			std::cout << "rotation: " << "\n";
-			for (const float& rotationId : obj.second.rotation) {
+			for (const float& rotationId : obj.rotation) {
 				std::cout << rotationId << ", ";
 			}
 			std::cout << "\n";
 
 			std::cout << "translation: " << "\n";
-			for (const float& translationId : obj.second.translation) {
+			for (const float& translationId : obj.translation) {
 				std::cout << translationId << ", ";
 			}
 			std::cout << "\n";
 
 			std::cout << "scale: " << "\n";
-			for (const float& scaleId : obj.second.scale) {
+			for (const float& scaleId : obj.scale) {
 				std::cout << scaleId << ", ";
 			}
 			std::cout << "\n";
@@ -425,14 +426,6 @@ void GLTF_Loader::printSkinInfos()
 		}
 		std::cout << "\n";
 	}
-}
-
-void GLTF_Loader::printNodeNames()
-{
-	for (const auto& obj : this->nodes) {
-		std::cout << obj.first << ", ";
-	}
-	std::cout << "\n";
 }
 void GLTF_Loader::printMeshData(const std::string& objectName, const std::string& attributeName) {
 	const int accessorIndex = meshes[objectName].attributes[attributeName];

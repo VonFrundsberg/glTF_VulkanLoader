@@ -20,6 +20,13 @@ int main() {
 	for (int i = 0; i < 3; i++) {
 		std::cout << glm::to_string(invMatrices[i]) << "\n";
 	}
+	std::cout << "JOINTS:" << "\n";
+	std::vector<int> jointsVector;
+	gltf.getJointsVector(jointsVector, "Armature");
+	for (int i = 0; i < jointsVector.size(); i++) {
+		std::cout << jointsVector[i] << "\n";
+	}
+
 	/*std::cout << "JOINTS:";
 	std::cout << "\n";
 	gltf.printMeshData("Cube.001", "JOINTS_0");
